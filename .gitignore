@@ -1,0 +1,13 @@
+﻿.venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+uploads/*
+!uploads/.gitkeep
+*.log
+yolov8s-world.pt
+yolov8s-world.zip
+
+weights/

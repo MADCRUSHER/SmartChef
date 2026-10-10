@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartChef AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ── Tokens ─────────────────────────────── */
+        :root {
+            --bg:        #0b0c0b;
+            --surface:   #111312;
+            --surface2:  #181b19;
+            --surface3:  #1f2420;
+            --border:    rgba(255,255,255,0.06);
+            --border2:   rgba(255,255,255,0.11);
+            --border3:   rgba(255,255,255,0.18);
+            --text:      #ede9e3;
+            --text2:     #a09890;
+            --text3:     #5a5650;
+            --gold:      #c9a96e;
+            --gold-dim:  rgba(201,169,110,0.15);
+            --green:     #6ec994;
+            --green-dim: rgba(110,201,148,0.1);
+            --red:       #c96e6e;
+            --red-dim:   rgba(201,110,110,0.1);
+            --r: 16px; --r-lg: 24px; --r-xl: 32px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: 'DM Sans', system-ui, sans-serif;
+            font-size: 15px; line-height: 1.6; min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        .wrap { max-width: 1020px; margin: 0 auto; padding: 52px 24px 100px; }
+
+        /* Header */
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 56px; padding-bottom: 24px; border-bottom: 1px solid var(--border);
+        }
+        .logo { font-family: 'Cormorant Garamond', serif; font-size: 1.75rem; font-weight: 700; }
+        .logo em { color: var(--gold); font-style: normal; }
+        .header-tag { font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--text3); }
+
+        /* Upload */
+        .upload-zone {
+            border: 1px dashed var(--border2); border-radius: var(--r-xl);
+            padding: 80px 40px; text-align: center; background: var(--surface);
+            cursor: pointer; position: relative; transition: border-color .2s, background .2s;
+        }
+        .upload-zone:hover, .upload-zone.over { border-color: var(--gold); background: var(--surface2); }
+        .upload-zone > input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+        .upload-glyph {
+            width: 72px; height: 72px; border-radius: 50%;
+            background: var(--surface2); border: 1px solid var(--border2);
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 24px; font-size: 1.75rem; transition: border-color .2s;
+        }
+        .upload-zone:hover .upload-glyph { border-color: var(--gold); }
+        .upload-h { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 700; margin-bottom: 8px; }
+        .upload-sub { font-size: 13px; color: var(--text2); margin-bottom: 32px; }
+        .divider-or { display: flex; align-items: center; gap: 14px; color: var(--text3); font-size: 12px; margin-bottom: 24px; }
+        .divider-or::before, .divider-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .btn-camera {
+            position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 8px;
+            padding: 11px 22px; border-radius: 100px; border: 1px solid var(--border2);
+            background: transparent; color: var(--text2); font-family: inherit;
+            font-size: 13px; font-weight: 500; cursor: pointer; transition: border-color .2s, color .2s;
+        }
+        .btn-camera:hover { border-color: var(--border3); color: var(--text); }
+        .btn-camera input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; border-radius: 100px; }
+
+        /* Preview */
+        .preview-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; }
+        #imgPreview { width: 100%; height: 360px; object-fit: cover; display: block; }
+        .preview-bar {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px 24px; border-top: 1px solid var(--border); gap: 12px;
+        }
+        .preview-name { font-size: 13px; color: var(--text2); }
+        .preview-name strong { color: var(--text); font-weight: 500; }
+        .preview-actions { display: flex; gap: 10px; }
+
+        /* Buttons */
+        .btn { display: inline-flex; align-items: center; gap: 8px; padding: 11px 22px; border-radius: 100px; font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; transition: all .18s; border: none; white-space: nowrap; }
+        .btn-primary { background: var(--gold); color: #0b0c0b; }
+        .btn-primary:hover { background: #d9ba82; transform: translateY(-1px); }
+        .btn-ghost { background: transparent; border: 1px solid var(--border2); color: var(--text2); }
+        .btn-ghost:hover { border-color: var(--border3); color: var(--text); }
+
+        /* Loading */
+        .loading-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 80px 40px; text-align: center; }
+        .spinner { width: 44px; height: 44px; border: 2px solid var(--border2); border-top-color: var(--gold); border-radius: 50%; animation: spin .9s linear infinite; margin: 0 auto 24px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .load-h { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+        .load-sub { font-size: 13px; color: var(--text2); }
+
+        /* Section */
+        .section-row { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px; }
+        .section-h { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; }
+        .section-meta { font-size: 12px; color: var(--text3); }
+
+        /* Ingredient grid */
+        .ing-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(138px, 1fr)); gap: 10px; margin-bottom: 40px; }
+        .ing-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 14px 16px; }
+        .ing-card.critical { border-color: rgba(201,110,110,.3); background: rgba(201,110,110,.05); }
+        .ing-card.soon     { border-color: rgba(201,169,110,.3); background: rgba(201,169,110,.05); }
+        .ing-card.fresh    { border-color: rgba(110,201,148,.3); background: rgba(110,201,148,.05); }
+        .ing-name { font-size: 13px; font-weight: 600; text-transform: capitalize; margin-bottom: 5px; }
+        .ing-days { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; }
+        .critical .ing-days { color: var(--red); }
+        .soon     .ing-days { color: var(--gold); }
+        .fresh    .ing-days { color: var(--green); }
+        .ing-bar { height: 2px; border-radius: 2px; margin-top: 10px; background: var(--border); overflow: hidden; }
+        .ing-fill { height: 100%; border-radius: 2px; }
+        .critical .ing-fill { background: var(--red); }
+        .soon     .ing-fill { background: var(--gold); }
+        .fresh    .ing-fill { background: var(--green); }
+
+        /* Filters */
+        .filter-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); padding: 24px 28px; margin-bottom: 40px; display: flex; gap: 32px; flex-wrap: wrap; }
+        .filter-group { flex: 1; min-width: 200px; }
+        .filter-label { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--text3); font-weight: 600; display: block; margin-bottom: 12px; }
+        .chips { display: flex; flex-wrap: wrap; gap: 7px; }
+        .chip { padding: 6px 14px; border-radius: 100px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: inherit; font-size: 12px; font-weight: 500; text-transform: capitalize; cursor: pointer; transition: all .15s; }
+        .chip:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+        .chip.active { background: var(--gold); border-color: var(--gold); color: #0b0c0b; font-weight: 700; }
+        .chip:disabled { opacity: .25; cursor: not-allowed; text-decoration: line-through; }
+
+        /* Shopping list */
+        .shop-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); padding: 28px; margin-bottom: 40px; }
+        .shop-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+        .shop-title { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 2px; }
+        .shop-subtitle { font-size: 12px; color: var(--text3); }
+        .shop-copy { padding: 8px 16px; border-radius: 100px; border: 1px solid var(--border2); background: transparent; color: var(--text2); font-family: inherit; font-size: 12px; font-weight: 500; cursor: pointer; transition: all .15s; flex-shrink: 0; }
+        .shop-copy:hover { border-color: var(--border3); color: var(--text); }
+        .shop-copy.copied { border-color: var(--green); color: var(--green); }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+        .shop-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r); font-size: 13px; text-transform: capitalize; }
+        .shop-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); flex-shrink: 0; }
+        .shop-freq { margin-left: auto; font-size: 11px; color: var(--text3); font-weight: 500; }
+
+        /* Recipe grid */
+        .recipe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        @media (max-width: 620px) { .recipe-grid { grid-template-columns: 1fr; } }
+        .recipe-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-xl); overflow: hidden; display: flex; flex-direction: column; transition: border-color .2s, transform .2s; }
+        .recipe-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+        .recipe-thumb-wrap { position: relative; }
+        .recipe-thumb { width: 100%; height: 200px; object-fit: cover; display: block; filter: brightness(.88); }
+        .match-badge { position: absolute; bottom: 12px; left: 12px; display: flex; align-items: center; gap: 8px; background: rgba(11,12,11,.88); backdrop-filter: blur(8px); border: 1px solid var(--border2); border-radius: 100px; padding: 6px 14px 6px 6px; }
+        .match-ring { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; flex-shrink: 0; }
+        .match-high { background: var(--green-dim); color: var(--green); border: 1.5px solid var(--green); }
+        .match-mid  { background: var(--gold-dim);  color: var(--gold);  border: 1.5px solid var(--gold); }
+        .match-low  { background: var(--red-dim);   color: var(--red);   border: 1.5px solid var(--red); }
+        .match-label { font-size: 11px; color: var(--text2); }
+        .match-label strong { color: var(--text); }
+        .time-badge { position: absolute; top: 12px; right: 12px; background: rgba(11,12,11,.8); backdrop-filter: blur(6px); border: 1px solid var(--border2); border-radius: 100px; padding: 4px 12px; font-size: 11px; color: var(--text2); }
+
+        .recipe-body { padding: 22px; flex: 1; display: flex; flex-direction: column; }
+        .cuisine-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+        .cuisine-pill { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; font-weight: 600; color: var(--text3); background: var(--surface2); border: 1px solid var(--border); padding: 3px 10px; border-radius: 100px; }
+        .recipe-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; font-weight: 700; line-height: 1.3; margin-bottom: 16px; }
+        .ing-breakdown { flex: 1; margin-bottom: 18px; display: flex; flex-direction: column; gap: 12px; }
+        .breakdown-label { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; font-weight: 700; margin-bottom: 7px; display: block; }
+        .have-label { color: var(--green); }
+        .need-label { color: var(--red); }
+        .ing-pills { display: flex; flex-wrap: wrap; gap: 5px; }
+        .ing-pill { font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: 500; }
+        .have-pill { background: var(--green-dim); color: var(--green); border: 1px solid rgba(110,201,148,.2); }
+        .need-pill { background: var(--red-dim);   color: var(--red);   border: 1px solid rgba(201,110,110,.2); }
+        .perfect-banner { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--green-dim); border: 1px solid rgba(110,201,148,.2); border-radius: var(--r); font-size: 12px; font-weight: 600; color: var(--green); margin-bottom: 12px; }
+        .recipe-cta { display: block; text-align: center; padding: 12px; border-radius: var(--r); background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); text-decoration: none; font-size: 13px; font-weight: 600; transition: all .2s; }
+        .recipe-cta:hover { background: var(--gold); border-color: var(--gold); color: #0b0c0b; }
+
+        .empty-state { grid-column: 1/-1; text-align: center; padding: 56px 20px; color: var(--text2); }
+        .empty-state .icon { font-size: 2rem; margin-bottom: 14px; display: block; opacity: .5; }
+        .empty-state p { font-size: 14px; }
+        .reset-bar { text-align: center; margin-top: 56px; padding-top: 28px; border-top: 1px solid var(--border); }
+        .btn-reset { background: none; border: none; color: var(--text3); font-family: inherit; font-size: 13px; cursor: pointer; transition: color .2s; }
+        .btn-reset:hover { color: var(--text); }
+
+        .fade-up { animation: fu .4s ease both; }
+        @keyframes fu { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+        .stagger > * { animation: fu .4s ease both; }
+        .stagger > *:nth-child(1){animation-delay:.04s}.stagger > *:nth-child(2){animation-delay:.08s}
+        .stagger > *:nth-child(3){animation-delay:.12s}.stagger > *:nth-child(4){animation-delay:.16s}
+        .stagger > *:nth-child(5){animation-delay:.20s}.stagger > *:nth-child(6){animation-delay:.24s}
+        .stagger > *:nth-child(7){animation-delay:.28s}.stagger > *:nth-child(8){animation-delay:.32s}
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <div class="logo">Smart<em>Chef</em></div>
+        <div class="header-tag">Zero-waste cooking · AI powered</div>
+    </header>
+
+    <!-- Stage 1: Upload -->
+    <div id="stageUpload">
+        <div class="upload-zone" id="uploadZone">
+            <input type="file" id="fileInput" accept="image/*">
+            <div class="upload-glyph">🧊</div>
+            <div class="upload-h">Photograph your fridge</div>
+            <p class="upload-sub">Drop an image here, or click to browse your gallery</p>
+            <div class="divider-or">or</div>
+            <button class="btn-camera" onclick="event.stopPropagation()">
+                📸 Use camera
+                <input type="file" id="cameraInput" accept="image/*" capture="environment">
+            </button>
+        </div>
+    </div>
+
+    <!-- Stage 2: Preview -->
+    <div id="stagePreview" style="display:none">
+        <div class="preview-card">
+            <img id="imgPreview" alt="Preview">
+            <div class="preview-bar">
+                <div class="preview-name">
+                    <strong id="previewName">photo.jpg</strong> — ready to analyse
+                </div>
+                <div class="preview-actions">
+                    <button class="btn btn-ghost" id="cancelBtn">Cancel</button>
+                    <button class="btn btn-primary" id="analyzeBtn">✦ Analyse ingredients</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stage 3: Loading -->
+    <div id="stageLoading" style="display:none">
+        <div class="loading-card">
+            <div class="spinner"></div>
+            <div class="load-h" id="loadH">Scanning your fridge…</div>
+            <div class="load-sub" id="loadSub">YOLO is identifying ingredients</div>
+        </div>
+    </div>
+
+    <!-- Stage 4: Results -->
+    <div id="stageResults" style="display:none">
+        <div class="section-row">
+            <div class="section-h">Freshness report</div>
+            <div class="section-meta" id="ingMeta"></div>
+        </div>
+        <div class="ing-grid stagger" id="ingGrid"></div>
+
+        <div class="filter-panel">
+            <div class="filter-group">
+                <span class="filter-label">Cuisine</span>
+                <div class="chips" id="cuisineFilter"></div>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Dietary</span>
+                <div class="chips" id="dietFilter"></div>
+            </div>
+        </div>
+
+        <!-- Shopping list (shown only when there are missing ingredients) -->
+        <div class="shop-panel" id="shopPanel" style="display:none">
+            <div class="shop-header">
+                <div>
+                    <div class="shop-title">🛒 Shopping list</div>
+                    <div class="shop-subtitle">Ingredients needed across your top recipes</div>
+                </div>
+                <button class="shop-copy" id="shopCopyBtn">Copy list</button>
+            </div>
+            <div class="shop-grid stagger" id="shopGrid"></div>
+        </div>
+
+        <div class="section-row">
+            <div class="section-h">Recipes for you</div>
+            <div class="section-meta" id="recipeMeta"></div>
+        </div>
+        <div class="recipe-grid stagger" id="recipeGrid"></div>
+
+        <div class="reset-bar">
+            <button class="btn-reset" id="resetBtn">↑ Scan another fridge</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────
+const S = {
+    file: null, ingredients: [], recipes: [],
+    availCuisines: [], availDiets: [],
+    filterCuisine: 'all', filterDiet: 'all',
+};
+
+// ── Stage machine ─────────────────────────────────
+function goTo(name) {
+    ['Upload','Preview','Loading','Results'].forEach(s => {
+        const el = document.getElementById('stage' + s);
+        if (el) el.style.display = s === name ? '' : 'none';
+    });
+}
+goTo('Upload');
+
+// ── File handling ─────────────────────────────────
+function handleFile(file) {
+    if (!file) return;
+    S.file = file;
+    document.getElementById('imgPreview').src = URL.createObjectURL(file);
+    document.getElementById('previewName').textContent = file.name || 'photo.jpg';
+    goTo('Preview');
+}
+document.getElementById('fileInput').addEventListener('change',   e => handleFile(e.target.files[0]));
+document.getElementById('cameraInput').addEventListener('change', e => handleFile(e.target.files[0]));
+
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover',  e => { e.preventDefault(); uz.classList.add('over'); });
+uz.addEventListener('dragleave', () => uz.classList.remove('over'));
+uz.addEventListener('drop',      e => { e.preventDefault(); uz.classList.remove('over'); handleFile(e.dataTransfer.files[0]); });
+
+// ── Reset ─────────────────────────────────────────
+function reset() {
+    S.file = null;
+    ['fileInput','cameraInput'].forEach(id => document.getElementById(id).value = '');
+    goTo('Upload');
+}
+document.getElementById('cancelBtn').addEventListener('click', reset);
+document.getElementById('resetBtn').addEventListener('click',  reset);
+
+// ── Analyse ───────────────────────────────────────
+document.getElementById('analyzeBtn').addEventListener('click', async () => {
+    if (!S.file) return;
+    goTo('Loading');
+    try {
+        // Phase 1: YOLO
+        setLoad('Scanning your fridge…', 'YOLO is identifying ingredients');
+        const fd = new FormData();
+        fd.append('image', S.file);
+        const r1 = await fetch('/analyze', { method: 'POST', body: fd });
+        if (!r1.ok) { const e = await r1.json().catch(()=>({})); throw new Error(e.error || `Error ${r1.status}`); }
+        const d1 = await r1.json();
+        S.ingredients = d1.ingredients || [];
+
+        // Phase 2: Recipes
+        const n = S.ingredients.length;
+        setLoad('Matching recipes…', `Found ${n} ingredient${n!==1?'s':''} — searching Spoonacular`);
+        const r2 = await fetch('/fetch_recipes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ingredients: S.ingredients.map(i => i.name) }),
+        });
+        if (!r2.ok) { const e = await r2.json().catch(()=>({})); throw new Error(e.error || `Error ${r2.status}`); }
+        const d2 = await r2.json();
+        S.recipes       = d2.recipes       || [];
+        S.availCuisines = d2.availCuisines || [];
+        S.availDiets    = d2.availDiets    || [];
+        S.filterCuisine = 'all';
+        S.filterDiet    = 'all';
+
+        renderAll();
+        goTo('Results');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+        alert('Error: ' + err.message);
+        reset();
+    }
+});
+
+function setLoad(h, sub) {
+    document.getElementById('loadH').textContent   = h;
+    document.getElementById('loadSub').textContent = sub;
+}
+
+// ── Render helpers ────────────────────────────────
+function renderAll() {
+    renderIngredients();
+    renderFilters();
+    renderRecipes();
+    renderShoppingList();
+}
+
+function renderIngredients() {
+    const list = S.ingredients;
+    document.getElementById('ingMeta').textContent =
+        list.length ? `${list.length} item${list.length>1?'s':''} detected` : '';
+    const grid = document.getElementById('ingGrid');
+    if (!list.length) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1">
+            <span class="icon">🔍</span><p>No ingredients detected.<br>Try a clearer, well-lit photo.</p></div>`;
+        return;
+    }
+    grid.innerHTML = list.map(i => {
+        const pct   = Math.round(Math.min(100, (i.daysUntilSpoil / i.maxDays) * 100));
+        const label = i.urgency==='critical' ? `Use in ${i.daysUntilSpoil}d`
+                    : i.urgency==='soon'     ? `${i.daysUntilSpoil}d left`
+                                             : `${i.daysUntilSpoil}d fresh`;
+        return `<div class="ing-card ${i.urgency}">
+            <div class="ing-name">${i.name}</div>
+            <div class="ing-days">${label}</div>
+            <div class="ing-bar"><div class="ing-fill" style="width:${pct}%"></div></div>
+        </div>`;
+    }).join('');
+}
+
+const ALL_C = ['italian','mexican','chinese','american','indian','mediterranean','french','japanese'];
+const ALL_D = ['vegetarian','vegan','gluten free','paleo','ketogenic'];
+
+function renderFilters() {
+    document.getElementById('cuisineFilter').innerHTML =
+        buildChips(['all',...ALL_C], S.availCuisines, S.filterCuisine, 'c');
+    document.getElementById('dietFilter').innerHTML =
+        buildChips(['all',...ALL_D], S.availDiets,    S.filterDiet,    'd');
+}
+
+function buildChips(all, avail, active, type) {
+    return all.map(v => {
+        const on = v==='all' || avail.includes(v);
+        return `<button class="chip${active===v?' active':''}"
+            data-type="${type}" data-val="${v}"
+            ${on?'':'disabled'}>${v}</button>`;
+    }).join('');
+}
+
+// Delegated filter click handler
+document.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip || chip.disabled) return;
+    if (chip.dataset.type==='c') S.filterCuisine = chip.dataset.val;
+    else                          S.filterDiet    = chip.dataset.val;
+    renderFilters();
+    renderRecipes();
+    renderShoppingList();
+});
+
+function filteredRecipes() {
+    return S.recipes.filter(r =>
+        (S.filterCuisine==='all' || r.cuisines.includes(S.filterCuisine)) &&
+        (S.filterDiet   ==='all' || r.diets.includes(S.filterDiet))
+    );
+}
+
+function renderRecipes() {
+    const list = filteredRecipes();
+    document.getElementById('recipeMeta').textContent =
+        list.length ? `${list.length} recipe${list.length>1?'s':''}` : '';
+
+    const grid = document.getElementById('recipeGrid');
+    if (!list.length) {
+        grid.innerHTML = `<div class="empty-state">
+            <span class="icon">🍽️</span>
+            <p>No recipes match these filters.<br>Try a different combination.</p></div>`;
+        return;
+    }
+
+    const fallback = 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&w=600&q=80';
+
+    grid.innerHTML = list.map(r => {
+        const pct       = r.matchPct || 0;
+        const ringClass = pct>=70 ? 'match-high' : pct>=40 ? 'match-mid' : 'match-low';
+        const total     = r.usedCount + r.missedCount;
+
+        const cuisinePills = [...r.cuisines.slice(0,1), ...r.diets.slice(0,1)]
+            .map(t=>`<span class="cuisine-pill">${t}</span>`).join('');
+
+        const usedHtml = r.used.length
+            ? `<div><span class="breakdown-label have-label">✓ In your fridge</span>
+               <div class="ing-pills">${r.used.map(n=>`<span class="ing-pill have-pill">${n}</span>`).join('')}</div></div>` : '';
+
+        const missedHtml = r.missed.length
+            ? `<div><span class="breakdown-label need-label">✕ Still need</span>
+               <div class="ing-pills">${r.missed.map(n=>`<span class="ing-pill need-pill">${n}</span>`).join('')}</div></div>` : '';
+
+        const perfectBanner = !r.missed.length
+            ? `<div class="perfect-banner">✦ Perfect match — you have everything!</div>` : '';
+
+        return `<div class="recipe-card fade-up">
+            <div class="recipe-thumb-wrap">
+                <img class="recipe-thumb" src="${r.image||fallback}"
+                     onerror="this.src='${fallback}'" alt="${r.name}">
+                <div class="match-badge">
+                    <div class="match-ring ${ringClass}">${pct}%</div>
+                    <div class="match-label">
+                        <strong>${r.usedCount} of ${total}</strong> ingredients
+                    </div>
+                </div>
+                ${r.cookTime ? `<div class="time-badge">⏱ ${r.cookTime} min</div>` : ''}
+            </div>
+            <div class="recipe-body">
+                ${cuisinePills ? `<div class="cuisine-row">${cuisinePills}</div>` : ''}
+                <div class="recipe-title">${r.name}</div>
+                ${perfectBanner}
+                <div class="ing-breakdown">${usedHtml}${missedHtml}</div>
+                <a class="recipe-cta" href="${r.url}" target="_blank" rel="noopener">
+                    View full recipe →
+                </a>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderShoppingList() {
+    const panel  = document.getElementById('shopPanel');
+    const list   = filteredRecipes();
+
+    // Count how many recipes need each missing ingredient
+    const freq = {};
+    list.forEach(r => r.missed.forEach(name => {
+        const k = name.toLowerCase();
+        freq[k] = (freq[k]||0) + 1;
+    }));
+
+    const items = Object.entries(freq)
+        .sort((a,b) => b[1]-a[1])
+        .map(([name, count]) => ({ name, count }));
+
+    if (!items.length) { panel.style.display='none'; return; }
+
+    panel.style.display = '';
+    document.getElementById('shopGrid').innerHTML = items.map(i =>
+        `<div class="shop-item">
+            <div class="shop-dot"></div>
+            <span>${i.name}</span>
+            <span class="shop-freq" title="needed in ${i.count} recipe${i.count>1?'s':''}">×${i.count}</span>
+        </div>`
+    ).join('');
+
+    const copyBtn = document.getElementById('shopCopyBtn');
+    copyBtn.onclick = () => {
+        navigator.clipboard.writeText(items.map(i=>`- ${i.name}`).join('\n')).then(() => {
+            copyBtn.textContent = 'Copied!';
+            copyBtn.classList.add('copied');
+            setTimeout(() => { copyBtn.textContent='Copy list'; copyBtn.classList.remove('copied'); }, 2000);
+        });
+    };
+}
+</script>
+</body>
+</html>
